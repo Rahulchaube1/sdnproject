@@ -218,7 +218,8 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_GET(self):
-        url = urlparse(self.path)
+        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
+        url = urlparse(raw_path)
         path = url.path
         query = parse_qs(url.query)
 
@@ -280,7 +281,8 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
 
     # ---- POST
     def do_POST(self):
-        path = urlparse(self.path).path
+        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
+        path = urlparse(raw_path).path
         try:
             body = self._body()
             if path in ("/api/packet", "/api/simulate"):

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>campus-sdn — Live Console</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230078d4'/%3E%3Cpath d='M4 5h8M4 8h8M4 11h5' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="workbench">
+
+  <!-- Title bar -->
+  <header class="titlebar">
+    <div class="brand">
+      <i data-icon="logo"></i>
+    </div>
+    <nav class="menu">
+      <button data-cmd="palette">View</button>
+      <button data-cmd="run.pingall">Run</button>
+      <button data-cmd="help">Help</button>
+    </nav>
+    <div class="command-center" data-cmd="palette" title="Command Palette (Ctrl+Shift+P)">
+      <i data-icon="search"></i><span>campus-sdn — OpenFlow 1.3 live console</span>
+    </div>
+    <div class="right">
+      <button class="icon-btn" data-cmd="toggle.sidebar" title="Toggle Primary Side Bar (Ctrl+B)"><i data-icon="layout-side"></i></button>
+      <button class="icon-btn" data-cmd="toggle.panel" title="Toggle Panel (Ctrl+J)"><i data-icon="layout-panel"></i></button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- Activity bar -->
+    <nav class="activitybar" id="activitybar">
+      <button data-side="network" class="active" title="Network (Ctrl+Shift+E)"><i data-icon="network" data-size="24"></i></button>
+      <button data-side="probe" title="Packet Probe"><i data-icon="send" data-size="24"></i></button>
+      <button data-side="policy" title="Policy"><i data-icon="shield" data-size="24"></i><span class="badge hidden" id="policyBadge">!</span></button>
+      <button data-side="files" title="Project Files"><i data-icon="files" data-size="24"></i></button>
+      <div class="spacer"></div>
+      <button data-cmd="help" title="Keyboard Shortcuts"><i data-icon="keyboard" data-size="22"></i></button>
+    </nav>
+
+    <!-- Side bar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-title"><span id="sideTitle">Network</span></div>
+      <div class="sidebar-body">
+
+        <!-- NETWORK -->
+        <div class="side-view active" data-view="network">
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Topology
+              <span class="actions"><button class="icon-btn" data-cmd="open.topology" title="Open Topology"><i data-icon="go"></i></button></span>
+            </div>
+            <div class="section-body" id="treeTopology"></div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Live Traffic</div>
+            <div class="section-body">
+              <div class="form">
+                <label class="check"><input type="checkbox" id="trafficToggle" /> Generate background traffic</label>
+                <div>
+                  <label for="trafficRate">Rate: <span id="trafficRateVal" class="mono">2.0</span> pkt/s</label>
+                  <input type="range" id="trafficRate" min="0.5" max="20" step="0.5" value="2" />
+                </div>
+                <p class="hint">Weighted campus mix: HTTPS/HTTP/DNS to the academic server, faculty sessions to the admin server, and occasional student attempts on the admin server that the ACL should drop.</p>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Session</div>
+            <div class="section-body">
+              <dl class="kv" id="sessionKv"></dl>
+            </div>
+          </section>
+        </div>
+
+        <!-- PROBE -->
+        <div class="side-view" data-view="probe">
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Send Packet</div>
+            <div class="section-body">
+              <form class="form" id="probeForm" autocomplete="off">
+                <div class="row2">
+                  <div><label for="pSrc">Source</label><select id="pSrc"></select></div>
+                  <div><label for="pDst">Destination</label><select id="pDst"></select></div>
+                </div>
+                <div class="row2">
+                  <div><label for="pProto">Protocol</label>
+                    <select id="pProto">
+                      <option value="ICMP">ICMP echo</option>
+                      <option value="HTTP">TCP 80 (HTTP)</option>
+                      <option value="HTTPS">TCP 443 (HTTPS)</option>
+                      <option value="SSH">TCP 22 (SSH)</option>
+                      <option value="DNS">UDP 53 (DNS)</option>
+                      <option value="ARP">ARP request</option>
+                    </select>
+                  </div>
+                  <div><label for="pCount">Count</label><input type="number" id="pCount" min="1" max="100" value="4" /></div>
+                </div>
+                <button class="btn block" type="submit"><i data-icon="send"></i>Send</button>
+                <p class="hint">Tip: click a node in the topology to set the source; Alt+click (or right-click) sets the destination.</p>
+              </form>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Scenarios</div>
+            <div class="section-body" id="scenarioList"></div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Test Runs</div>
+            <div class="section-body">
+              <div class="form">
+                <button class="btn secondary block" data-cmd="run.pingall"><i data-icon="play"></i>Run pingall (30 pairs)</button>
+                <button class="btn secondary block" data-cmd="run.suite"><i data-icon="beaker"></i>Run policy probes (14)</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- POLICY -->
+        <div class="side-view" data-view="policy">
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Enforcement</div>
+            <div class="section-body">
+              <div class="form">
+                <label class="check"><input type="checkbox" id="aclToggle" checked /> Enforce student → admin ACL</label>
+                <p class="hint">Unchecking removes the priority-200 DROP entries from s1, s2 and s3 so you can compare behaviour. Re-checking reinstalls them and flushes any reactive flows for those pairs.</p>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Rules (table 0)</div>
+            <div class="section-body" id="ruleList"></div>
+          </section>
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Roles</div>
+            <div class="section-body" id="roleList"></div>
+          </section>
+        </div>
+
+        <!-- FILES -->
+        <div class="side-view" data-view="files">
+          <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>campus_sdn_project</div>
+            <div class="section-body" id="fileTree"></div>
+          </section>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Editor + panel -->
+    <div class="editor-col">
+      <div class="editor-group">
+        <div class="tabs" id="tabs"></div>
+        <div class="breadcrumbs" id="breadcrumbs"></div>
+        <div class="editor-body" id="editorBody">
+
+          <!-- Topology -->
+          <div class="editor-pane" data-pane="topology">
+            <div class="topo-wrap">
+              <div>
+                <div class="topo-toolbar">
+                  <div class="legend">
+                    <span><span class="dot" style="background:var(--student)"></span>Student</span>
+                    <span><span class="dot" style="background:var(--faculty)"></span>Faculty</span>
+                    <span><span class="dot" style="background:var(--srv-acad)"></span>Academic server</span>
+                    <span><span class="dot" style="background:var(--srv-admin)"></span>Admin server</span>
+                    <span><span class="dot" style="background:var(--switch)"></span>OpenFlow switch</span>
+                  </div>
+                  <div class="right">
+                    <span class="mono dim">10.0.0.0/24</span>
+                    <button class="icon-btn" id="animToggle" title="Toggle packet animation"><i data-icon="pulse"></i></button>
+                  </div>
+                </div>
+                <svg id="topo" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+              </div>
+              <div class="overview">
+                <div>
+                  <h3>Counters</h3>
+                  <div class="stat-grid" id="statGrid"></div>
+                </div>
+                <div>
+                  <h3>Packets / second <span class="mono dim" style="text-transform:none">last 60 s</span>
+                    <span class="legend"><span><span class="dot" style="background:var(--ok-strong)"></span> permitted</span><span><span class="dot" style="background:var(--err-strong)"></span> dropped</span></span>
+                  </h3>
+                  <canvas id="rateChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flow tables -->
+          <div class="editor-pane" data-pane="flows">
+            <div class="pane-toolbar">
+              <div class="seg" id="flowSwitchSeg">
+                <button data-sw="all" class="active">All</button>
+                <button data-sw="s1">s1</button>
+                <button data-sw="s2">s2</button>
+                <button data-sw="s3">s3</button>
+              </div>
+              <div class="seg" id="flowModeSeg">
+                <button data-mode="table" class="active">Table</button>
+                <button data-mode="dump">dump-flows</button>
+              </div>
+              <label class="check" style="font-size:12px"><input type="checkbox" id="flowReactiveOnly" /> Reactive only</label>
+              <div class="right">
+                <span class="title" id="flowSummary"></span>
+                <button class="icon-btn" id="copyDump" title="Copy dump-flows output"><i data-icon="copy"></i></button>
+              </div>
+            </div>
+            <div id="flowTableView">
+              <table class="grid-table">
+                <thead><tr>
+                  <th>switch</th><th class="num">cookie</th><th class="num">priority</th><th>rule</th><th>match</th><th>actions</th>
+                  <th class="num">n_packets</th><th class="num">n_bytes</th><th class="num">duration</th><th class="num">idle</th>
+                </tr></thead>
+                <tbody id="flowBody"></tbody>
+              </table>
+            </div>
+            <pre class="dump hidden" id="flowDump"></pre>
+          </div>
+
+          <!-- Connectivity -->
+          <div class="editor-pane" data-pane="matrix">
+            <div class="pane-toolbar">
+              <span class="title">Connectivity tests run against the live switches (counters and flow tables are updated).</span>
+              <div class="right">
+                <button class="btn secondary" data-cmd="run.suite"><i data-icon="beaker"></i>Run probes</button>
+                <button class="btn" data-cmd="run.pingall"><i data-icon="play"></i>Run pingall</button>
+              </div>
+            </div>
+            <div class="matrix-wrap">
+              <div>
+                <div class="block-title">pingall <span class="dim mono" id="matrixTime"></span></div>
+                <div id="matrixHost"><div class="empty">No results yet. Run pingall to fill the 6 × 6 matrix.</div></div>
+              </div>
+              <div>
+                <div class="block-title">Role-based probes <span class="dim mono" id="suiteTime"></span><span id="suiteResult"></span></div>
+                <div id="suiteHost"><div class="empty">No results yet. Run the probes to check all 14 policy cases.</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Source files are added dynamically as editor-pane[data-pane="file:..."] -->
+
+          <div class="offline-banner hidden" id="offline">
+            <div class="box">
+              <h2>Not connected to the controller service</h2>
+              <p class="muted">This console needs the local server for live data. From the project folder run:</p>
+              <p><code>python server.py</code></p>
+              <p class="muted">then open <code>http://127.0.0.1:8080</code>. Retrying automatically…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sash" id="sash"></div>
+      <section class="panel" id="panel">
+        <div class="panel-head">
+          <button class="panel-tab active" data-ptab="capture">Capture <span class="count" id="capCount">0</span></button>
+          <button class="panel-tab" data-ptab="trace">Trace</button>
+          <button class="panel-tab" data-ptab="problems">Problems <span class="count" id="probCount">0</span></button>
+          <button class="panel-tab" data-ptab="log">Controller Log</button>
+          <div class="tools">
+            <input type="text" class="filter" id="capFilter" placeholder="Filter (e.g. h1, ssh, drop)" />
+            <button class="icon-btn on" id="autoScroll" title="Follow new packets"><i data-icon="follow"></i></button>
+            <button class="icon-btn" id="panelClear" title="Clear"><i data-icon="clear"></i></button>
+            <button class="icon-btn" data-cmd="toggle.panel" title="Hide Panel"><i data-icon="close"></i></button>
+          </div>
+        </div>
+        <div class="panel-body" id="panelBody">
+          <div class="panel-view active" data-pview="capture">
+            <table class="grid-table" id="capture">
+              <thead><tr>
+                <th class="num">No.</th><th>Time</th><th>Source</th><th>Destination</th><th>Protocol</th><th class="num">Length</th>
+                <th>Path</th><th>Rule</th><th>Verdict</th><th class="num">RTT</th><th>Origin</th>
+              </tr></thead>
+              <tbody id="capBody"></tbody>
+            </table>
+          </div>
+          <div class="panel-view" data-pview="trace"><div class="trace" id="trace"><div class="empty">Select a packet in Capture to see its hop-by-hop pipeline trace.</div></div></div>
+          <div class="panel-view" data-pview="problems"><div id="problems"><div class="empty">No policy violations detected.</div></div></div>
+          <div class="panel-view" data-pview="log"><div class="log" id="log"></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <footer class="statusbar" id="statusbar">
+    <span class="item remote" id="sbConn" title="Connection to server.py"><i data-icon="remote"></i><span>connecting…</span></span>
+    <span class="item click" id="sbAcl" title="Toggle ACL enforcement"><i data-icon="shield"></i><span>ACL</span></span>
+    <span class="item click" id="sbTraffic" title="Toggle background traffic"><i data-icon="pulse"></i><span>traffic off</span></span>
+    <span class="item click" id="sbProblems" title="Show problems"><i data-icon="error"></i><span id="sbDrops">0</span><i data-icon="warning"></i><span id="sbPin">0</span></span>
+    <span class="spacer"></span>
+    <span class="item" id="sbPkts">0 pkts</span>
+    <span class="item" id="sbFlows">0 flows</span>
+    <span class="item" id="sbRate">0.0 pkt/s</span>
+    <span class="item">OpenFlow 1.3</span>
+    <span class="item" id="sbUptime">up 0s</span>
+    <span class="item" id="sbClock">--:--:--</span>
+  </footer>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>
