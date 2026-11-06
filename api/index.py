@@ -8,5 +8,9 @@ if root_dir not in sys.path:
 
 from server import SDNRequestHandler
 
-# Vercel looks for a BaseHTTPRequestHandler class named 'handler'
-handler = SDNRequestHandler
+class handler(SDNRequestHandler):
+    """Vercel serverless HTTP handler."""
+    pass
+
+app = handler
+application = handler

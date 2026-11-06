@@ -342,5 +342,12 @@ def main():
         httpd.server_close()
 
 
+class handler(SDNRequestHandler):
+    """Vercel serverless HTTP handler."""
+    pass
+
+app = handler
+application = handler
+
 if __name__ == "__main__":
     main()

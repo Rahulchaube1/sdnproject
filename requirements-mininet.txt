@@ -1,0 +1,5 @@
+# Dependencies for Ubuntu/Debian Linux VM running Mininet with hardware Ryu controller
+ryu==4.34
+eventlet==0.30.2
+oslo.config>=8.0.0
+msgpack>=1.0.0
