@@ -1,10 +1,16 @@
 # Campus Access Control via OpenFlow 1.3 Software-Defined Networking (SDN)
 
+[![SDN Policy Verification CI](https://github.com/Rahulchaube1/sdnproject/actions/workflows/ci.yml/badge.svg)](https://github.com/Rahulchaube1/sdnproject/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Vercel-black?logo=vercel&logoColor=white)](https://sdnproject.vercel.app)
+[![Release](https://img.shields.io/github/v/release/Rahulchaube1/sdnproject?color=0078d4&label=release)](https://github.com/Rahulchaube1/sdnproject/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![OpenFlow 1.3](https://img.shields.io/badge/OpenFlow-1.3-blue.svg)
 ![SDN Controller](https://img.shields.io/badge/Controller-Ryu%204.34-0078d4.svg)
-![Data Plane](https://img.shields.io/badge/Data%20Plane-Open%20vSwitch%20%2F%20Mininet-green.svg)
-![Console](https://img.shields.io/badge/Console-VS%20Code%20Dark%20Modern%20Workbench-purple.svg)
-![License](https://img.shields.io/badge/License-MIT-gray.svg)
+![Data Plane](https://img.shields.io/badge/Data%20Plane-Open%20vSwitch%20%2F%20Mininet-238636.svg)
+![Console](https://img.shields.io/badge/Console-VS%20Code%20Dark%20Modern%20Workbench-6e40c9.svg)
+
+> **Live Deployment:** [https://sdnproject.vercel.app](https://sdnproject.vercel.app)  
+> **Source Repository:** [https://github.com/Rahulchaube1/sdnproject](https://github.com/Rahulchaube1/sdnproject)
 
 ---
 
