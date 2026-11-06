@@ -391,7 +391,7 @@
 
   function animatePacketTraversal(rec) {
     const svg = document.getElementById('topo');
-    if (!svg || !rec.path) return;
+    if (!svg || !rec) return;
 
     const animGroup = document.getElementById('topoAnimLayer');
     if (!animGroup) return;
@@ -399,17 +399,19 @@
     // Collect waypoints
     const srcNode = NODE_POSITIONS[rec.src_host];
     const dstNode = NODE_POSITIONS[rec.dst_host];
-    if (!srcNode || !dstNode) return;
+    if (!srcNode) return;
 
     const waypoints = [{ x: srcNode.x, y: srcNode.y }];
-    for (const sw of rec.path) {
+    for (const sw of (rec.path || [])) {
       const swNode = NODE_POSITIONS[sw];
       if (swNode) waypoints.push({ x: swNode.x, y: swNode.y });
       if (rec.dropped_at === sw) break;
     }
-    if (rec.allowed) {
+    if (rec.allowed && dstNode) {
       waypoints.push({ x: dstNode.x, y: dstNode.y });
     }
+
+    if (waypoints.length < 2) return;
 
     // Packet bead
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -427,10 +429,14 @@
       const elapsed = now - startTime;
       const t = Math.min(1, elapsed / totalDuration);
       const scaled = t * segCount;
-      const idx = Math.min(segCount - 1, Math.floor(scaled));
+      const idx = Math.min(segCount - 1, Math.max(0, Math.floor(scaled)));
       const localT = scaled - idx;
       const p0 = waypoints[idx];
-      const p1 = waypoints[idx + 1];
+      const p1 = waypoints[Math.min(waypoints.length - 1, idx + 1)];
+      if (!p0 || !p1) {
+        if (circle.parentNode) circle.remove();
+        return;
+      }
       const cx = p0.x + (p1.x - p0.x) * localT;
       const cy = p0.y + (p1.y - p0.y) * localT;
       circle.setAttribute('cx', cx);
@@ -531,7 +537,7 @@
     Object.entries(NODE_POSITIONS).forEach(([id, meta]) => {
       const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       nodeGroup.id = `node-${id}`;
-      nodeGroup.className = 'node';
+      nodeGroup.setAttribute('class', 'node');
       nodeGroup.setAttribute('transform', `translate(${meta.x}, ${meta.y})`);
 
       let w = 100, h = 42;
@@ -794,7 +800,11 @@
     `).join('');
 
     traceEl.innerHTML = `
-      <h4>Packet #${rec.id}: ${rec.src_host} (${rec.src_ip}) → ${rec.dst_host} (${rec.dst_ip}) [${rec.protocol}] ${verdictBadge}</h4>
+      <h4>
+        <span>Packet #${rec.id}: ${rec.src_host} (${rec.src_ip}) → ${rec.dst_host} (${rec.dst_ip}) [${rec.protocol}]</span>
+        ${verdictBadge}
+        <button class="btn secondary" style="margin-left:auto;height:22px;font-size:11px;" onclick="replayPacket(${rec.id})"><i data-icon="play"></i>Replay Frame</button>
+      </h4>
       <p class="reason">${rec.reason || ''}</p>
       
       <div class="sub">Forward Path Execution (Hops)</div>
@@ -1133,6 +1143,7 @@
   // ---------------------------------------------------------------------------
   function initTabsAndSidebar() {
     renderTabsHeader();
+    switchTab(state.activeTab || 'topology');
 
     // Activity bar switching
     document.querySelectorAll('#activitybar button[data-side]').forEach(btn => {
@@ -1197,6 +1208,11 @@
 
     document.getElementById('capFilter')?.addEventListener('input', () => {
       renderCaptureTable();
+    });
+
+    document.getElementById('btnExportCsv')?.addEventListener('click', () => {
+      window.location.href = '/api/capture/export';
+      showToast('Exported packet capture to campus_sdn_capture.csv');
     });
 
     // Animation toggle
@@ -1432,8 +1448,70 @@
       });
     }
 
+    // Traffic preset buttons
+    document.querySelectorAll('#trafficPresetSeg button[data-preset]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const preset = btn.getAttribute('data-preset');
+        document.querySelectorAll('#trafficPresetSeg button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        try {
+          await api('/api/traffic', {
+            method: 'POST',
+            body: JSON.stringify({ preset, enabled: true })
+          });
+          showToast(`Traffic scenario preset: ${preset.toUpperCase()}`);
+        } catch (_) {}
+      });
+    });
+
+    // Custom OpenFlow Rule Installer
+    const customRuleForm = document.getElementById('customRuleForm');
+    if (customRuleForm) {
+      customRuleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sw = document.getElementById('crSwitch').value;
+        const prio = parseInt(document.getElementById('crPriority').value, 10) || 180;
+        const srcIp = document.getElementById('crSrcIp').value.trim();
+        const dstIp = document.getElementById('crDstIp').value.trim();
+        const action = document.getElementById('crAction').value;
+        const ruleId = document.getElementById('crRuleId').value.trim() || 'CUSTOM-ACL';
+
+        try {
+          await api('/api/flow/install', {
+            method: 'POST',
+            body: JSON.stringify({
+              switch: sw,
+              priority: prio,
+              nw_src: srcIp,
+              nw_dst: dstIp,
+              actions: action,
+              rule_id: ruleId
+            })
+          });
+          showToast(`Installed OpenFlow rule ${ruleId} (prio=${prio}) on ${sw}.`);
+          switchTab('flows');
+        } catch (err) {
+          showToast(`Rule install: ${err.message}`, 'error');
+        }
+      });
+    }
+
     renderScenarioPresets();
   }
+
+  window.replayPacket = async function(id) {
+    const rec = state.packets.find(p => p.id === id);
+    if (!rec) return;
+    try {
+      await api('/api/packet', {
+        method: 'POST',
+        body: JSON.stringify({ src: rec.src_host, dst: rec.dst_host, protocol: rec.protocol, count: 1 })
+      });
+      showToast(`Replayed frame: ${rec.src_host} → ${rec.dst_host}`);
+    } catch (_) {
+      simulateClientPacket(rec.src_host, rec.dst_host, rec.protocol, 1);
+    }
+  };
 
   function simulateClientPacket(src, dst, proto, count = 1) {
     const isStudent = src === 'h1' || src === 'h2';

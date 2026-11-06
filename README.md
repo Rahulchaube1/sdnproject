@@ -14,6 +14,24 @@
 
 ---
 
+## Live Console & Operational Telemetry
+
+The workbench provides an interactive VS Code "Dark Modern" reactive telemetry console connecting directly to the OpenFlow 1.3 control plane over Server-Sent Events (SSE).
+
+| Interactive SDN Topology & Live Counters | OpenFlow 1.3 Flow Tables Inspector |
+| :---: | :---: |
+| ![SDN Topology](assets/screenshots/01_topology_view.png) | ![OpenFlow Tables](assets/screenshots/02_flow_tables.png) |
+
+| 30-Pair PingAll Matrix & 14 Compliance Probes | Hop-by-Hop Packet Pipeline Trace |
+| :---: | :---: |
+| ![PingAll Matrix](assets/screenshots/03_pingall_matrix.png) | ![Packet Pipeline Trace](assets/screenshots/04_hop_trace.png) |
+
+| Policy Enforcement & Real-Time Problems View | Real-Time Packet Stream & CSV Capture Export |
+| :---: | :---: |
+| ![Policy Enforcement](assets/screenshots/05_policy_problems.png) | ![Packet Stream](assets/screenshots/06_packet_capture.png) |
+
+---
+
 ## Academic Project Information
 
 - **Institution:** Department of Networking and Communications, SRM Institute of Science and Technology

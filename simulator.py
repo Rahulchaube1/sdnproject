@@ -576,6 +576,50 @@ class CampusSDNSimulator:
                 "logs": list(self.controller_log)[-logs:],
             }
 
+    def install_custom_rule(self, switch: str, priority: int, match: Dict, actions: str,
+                            rule_id: str, idle_timeout: int = 0) -> List[FlowEntry]:
+        """Installs a custom OpenFlow 1.3 rule on a target switch or 'all' switches."""
+        targets = [switch] if switch in self.switches else list(self.switches.keys())
+        installed = []
+        with self.lock:
+            for sw_name in targets:
+                entry = self._install(
+                    sw_name, priority, match, actions, rule_id,
+                    idle_timeout=idle_timeout, reactive=False
+                )
+                installed.append(entry)
+            self._log("INFO", f"custom rule installed: {rule_id} (prio={priority}, target={switch})")
+        return installed
+
+    def delete_rule(self, switch: str, rule_id: str) -> int:
+        """Deletes a rule by rule_id from target switch or all switches."""
+        targets = [switch] if switch in self.switches else list(self.switches.keys())
+        deleted = 0
+        with self.lock:
+            for sw_name in targets:
+                keep = []
+                for entry in self.flow_tables[sw_name]:
+                    if entry.rule_id == rule_id:
+                        deleted += 1
+                        self.stats["flow_mods"] += 1
+                        self._log("INFO", f"FLOW_MOD delete {sw_name} {rule_id} priority={entry.priority}")
+                    else:
+                        keep.append(entry)
+                self.flow_tables[sw_name] = keep
+        return deleted
+
+    def export_csv_capture(self) -> str:
+        """Exports captured packets formatted as CSV."""
+        lines = ["id,timestamp,source_host,source_ip,dst_host,dst_ip,protocol,bytes,verdict,rule_id,priority,rtt_ms,dropped_at"]
+        with self.lock:
+            for p in self.packet_logs:
+                lines.append(
+                    f"{p['id']},{p['timestamp']},{p['src_host']},{p['src_ip']},{p['dst_host']},{p['dst_ip']},"
+                    f"{p['protocol']},{p['bytes']},{p['verdict']},{p['rule_id']},{p['priority']},"
+                    f"{p['rtt_ms'] if p['rtt_ms'] is not None else ''},{p['dropped_at'] or ''}"
+                )
+        return "\n".join(lines)
+
     def stats_dict(self) -> Dict:
         with self.lock:
             stats = dict(self.stats)

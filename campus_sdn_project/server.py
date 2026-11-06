@@ -87,20 +87,39 @@ SIMULATOR.add_listener(HUB.publish)
 
 # ------------------------------------------------------------------ traffic generator
 class TrafficGenerator(threading.Thread):
-    """Background campus traffic with exponential inter-arrival times."""
+    """Background campus traffic with exponential inter-arrival times and scenario profiles."""
 
-    # (src pool, dst, protocol, weight)
-    PROFILE = [
-        (("h1", "h2", "h3", "h4"), "srv_acad", "HTTPS", 30),
-        (("h1", "h2", "h3", "h4"), "srv_acad", "HTTP", 12),
-        (("h1", "h2", "h3", "h4"), "srv_acad", "DNS", 8),
-        (("h3", "h4"), "srv_admin", "HTTPS", 14),
-        (("h3", "h4"), "srv_admin", "SSH", 6),
-        (("h1", "h2"), "srv_admin", "HTTPS", 6),   # policy violations
-        (("h1", "h2"), "srv_admin", "SSH", 3),
-        (("h1", "h2", "h3", "h4"), "srv_acad", "ICMP", 6),
-        (("h1", "h2", "h3", "h4"), None, "ICMP", 5),  # peer to peer
-    ]
+    PRESETS = {
+        "normal": [
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTPS", 30),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTP", 12),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "DNS", 8),
+            (("h3", "h4"), "srv_admin", "HTTPS", 14),
+            (("h3", "h4"), "srv_admin", "SSH", 6),
+            (("h1", "h2"), "srv_admin", "HTTPS", 6),
+            (("h1", "h2"), "srv_admin", "SSH", 3),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "ICMP", 6),
+            (("h1", "h2", "h3", "h4"), None, "ICMP", 5),
+        ],
+        "exam": [
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTPS", 60),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTP", 25),
+            (("h1", "h2"), "srv_acad", "DNS", 10),
+            (("h3", "h4"), "srv_admin", "HTTPS", 5),
+        ],
+        "breach": [
+            (("h1", "h2"), "srv_admin", "SSH", 40),
+            (("h1", "h2"), "srv_admin", "HTTPS", 30),
+            (("h1", "h2"), "srv_admin", "HTTP", 20),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "ICMP", 10),
+        ],
+        "burst": [
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTPS", 25),
+            (("h1", "h2", "h3", "h4"), "srv_acad", "HTTP", 25),
+            (("h1", "h2"), "srv_admin", "HTTPS", 25),
+            (("h3", "h4"), "srv_admin", "SSH", 25),
+        ],
+    }
 
     def __init__(self, sim: CampusSDNSimulator, hub: EventHub):
         super().__init__(daemon=True, name="traffic-generator")
@@ -108,23 +127,29 @@ class TrafficGenerator(threading.Thread):
         self.hub = hub
         self.enabled = False
         self.rate = 2.0
+        self.preset = "normal"
         self.rng = random.Random()
         self._wake = threading.Event()
-        self._weights = [p[3] for p in self.PROFILE]
+        self._profile = self.PRESETS["normal"]
+        self._weights = [p[3] for p in self._profile]
 
-    def configure(self, enabled=None, rate=None):
+    def configure(self, enabled=None, rate=None, preset=None):
         if enabled is not None:
             self.enabled = bool(enabled)
         if rate is not None:
             self.rate = max(0.2, min(50.0, float(rate)))
+        if preset in self.PRESETS:
+            self.preset = preset
+            self._profile = self.PRESETS[preset]
+            self._weights = [p[3] for p in self._profile]
         self._wake.set()
         self.hub.publish("traffic", self.status())
 
     def status(self):
-        return {"enabled": self.enabled, "rate": self.rate}
+        return {"enabled": self.enabled, "rate": self.rate, "preset": self.preset}
 
     def _pick(self):
-        srcs, dst, proto, _ = self.rng.choices(self.PROFILE, weights=self._weights)[0]
+        srcs, dst, proto, _ = self.rng.choices(self._profile, weights=self._weights)[0]
         src = self.rng.choice(srcs)
         if dst is None:
             dst = self.rng.choice([h for h in ("h1", "h2", "h3", "h4") if h != src])
@@ -218,7 +243,8 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_GET(self):
-        url = urlparse(self.path)
+        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
+        url = urlparse(raw_path)
         path = url.path
         query = parse_qs(url.query)
 
@@ -229,6 +255,14 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/dump":
             switch = (query.get("switch") or [None])[0]
             return self._send(200, SIMULATOR.format_ovs_dump(switch).encode("utf-8"), "text/plain; charset=utf-8")
+        if path == "/api/capture/export":
+            csv_data = SIMULATOR.export_csv_capture()
+            return self._send(
+                200,
+                csv_data.encode("utf-8"),
+                "text/csv; charset=utf-8",
+                {"Content-Disposition": 'attachment; filename="campus_sdn_capture.csv"'}
+            )
         if path == "/api/source":
             name = (query.get("file") or [""])[0]
             if name not in SOURCE_WHITELIST:
@@ -280,7 +314,8 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
 
     # ---- POST
     def do_POST(self):
-        path = urlparse(self.path).path
+        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
+        path = urlparse(raw_path).path
         try:
             body = self._body()
             if path in ("/api/packet", "/api/simulate"):
@@ -300,8 +335,32 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
             if path == "/api/suite":
                 return self._json({"results": run_core_suite(SIMULATOR, source="suite"), "ts": time.time()})
             if path == "/api/traffic":
-                TRAFFIC.configure(body.get("enabled"), body.get("rate"))
+                TRAFFIC.configure(body.get("enabled"), body.get("rate"), body.get("preset"))
                 return self._json(TRAFFIC.status())
+            if path == "/api/flow/install":
+                match = {}
+                if body.get("nw_src"):
+                    match["ipv4_src"] = body["nw_src"]
+                if body.get("nw_dst"):
+                    match["ipv4_dst"] = body["nw_dst"]
+                if body.get("eth_type"):
+                    match["eth_type"] = int(body["eth_type"])
+                if body.get("in_port"):
+                    match["in_port"] = int(body["in_port"])
+                entries = SIMULATOR.install_custom_rule(
+                    switch=body.get("switch", "all"),
+                    priority=int(body.get("priority", 180)),
+                    match=match,
+                    actions=body.get("actions", "drop"),
+                    rule_id=body.get("rule_id", "CUSTOM-ACL"),
+                    idle_timeout=int(body.get("idle_timeout", 0)),
+                )
+                HUB.publish("state", full_state())
+                return self._json({"status": "ok", "installed": len(entries)})
+            if path == "/api/flow/delete":
+                count = SIMULATOR.delete_rule(body.get("switch", "all"), body.get("rule_id", ""))
+                HUB.publish("state", full_state())
+                return self._json({"status": "ok", "deleted": count})
             if path == "/api/acl":
                 SIMULATOR.set_acl_enforced(bool(body.get("enforced", True)))
                 HUB.publish("state", full_state())

@@ -62,7 +62,16 @@
                   <label for="trafficRate">Rate: <span id="trafficRateVal" class="mono">2.0</span> pkt/s</label>
                   <input type="range" id="trafficRate" min="0.5" max="20" step="0.5" value="2" />
                 </div>
-                <p class="hint">Weighted campus mix: HTTPS/HTTP/DNS to the academic server, faculty sessions to the admin server, and occasional student attempts on the admin server that the ACL should drop.</p>
+                <div style="margin-top:6px;">
+                  <label>Traffic Scenario Profile</label>
+                  <div id="trafficPresetSeg" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;">
+                    <button type="button" class="btn secondary" data-preset="normal" style="font-size:11px;padding:2px 4px;">Normal Mix</button>
+                    <button type="button" class="btn secondary" data-preset="exam" style="font-size:11px;padding:2px 4px;">Exam Rush</button>
+                    <button type="button" class="btn secondary" data-preset="breach" style="font-size:11px;padding:2px 4px;">Breach Test</button>
+                    <button type="button" class="btn secondary" data-preset="burst" style="font-size:11px;padding:2px 4px;">DDoS Burst</button>
+                  </div>
+                </div>
+                <p class="hint">Weighted campus mix: HTTPS/HTTP/DNS to academic server, faculty admin records, and student policy probes.</p>
               </div>
             </div>
           </section>
@@ -129,6 +138,43 @@
             </div>
           </section>
           <section class="section">
+            <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Add OpenFlow 1.3 Rule</div>
+            <div class="section-body">
+              <form class="form" id="customRuleForm" autocomplete="off">
+                <div class="row2">
+                  <div><label for="crSwitch">Switch</label>
+                    <select id="crSwitch">
+                      <option value="all">All (s1, s2, s3)</option>
+                      <option value="s1">s1 (Student Wing)</option>
+                      <option value="s2">s2 (Faculty Wing)</option>
+                      <option value="s3">s3 (Core Server)</option>
+                    </select>
+                  </div>
+                  <div><label for="crPriority">Priority</label><input type="number" id="crPriority" min="1" max="65535" value="180" /></div>
+                </div>
+                <div class="row2">
+                  <div><label for="crSrcIp">Src IPv4</label><input type="text" id="crSrcIp" placeholder="10.0.0.1" /></div>
+                  <div><label for="crDstIp">Dst IPv4</label><input type="text" id="crDstIp" placeholder="10.0.0.200" /></div>
+                </div>
+                <div class="row2">
+                  <div><label for="crAction">Action</label>
+                    <select id="crAction">
+                      <option value="drop">DROP (clear-actions)</option>
+                      <option value="output:1">OUTPUT:Port 1</option>
+                      <option value="output:2">OUTPUT:Port 2</option>
+                      <option value="output:3">OUTPUT:Port 3</option>
+                      <option value="output:4">OUTPUT:Port 4</option>
+                      <option value="NORMAL">NORMAL (L2 Forward)</option>
+                      <option value="CONTROLLER">Punt to Controller</option>
+                    </select>
+                  </div>
+                  <div><label for="crRuleId">Rule ID</label><input type="text" id="crRuleId" value="CUSTOM-ACL-180" /></div>
+                </div>
+                <button class="btn secondary block" type="submit"><i data-icon="shield"></i>Install Flow to Table 0</button>
+              </form>
+            </div>
+          </section>
+          <section class="section">
             <div class="section-head"><span class="chev"><i data-icon="chevron"></i></span>Rules (table 0)</div>
             <div class="section-body" id="ruleList"></div>
           </section>
@@ -156,7 +202,7 @@
         <div class="editor-body" id="editorBody">
 
           <!-- Topology -->
-          <div class="editor-pane" data-pane="topology">
+          <div class="editor-pane active" data-pane="topology">
             <div class="topo-wrap">
               <div>
                 <div class="topo-toolbar">
@@ -263,6 +309,7 @@
           <button class="panel-tab" data-ptab="log">Controller Log</button>
           <div class="tools">
             <input type="text" class="filter" id="capFilter" placeholder="Filter (e.g. h1, ssh, drop)" />
+            <button class="icon-btn" id="btnExportCsv" title="Export CSV Capture"><i data-icon="copy"></i></button>
             <button class="icon-btn on" id="autoScroll" title="Follow new packets"><i data-icon="follow"></i></button>
             <button class="icon-btn" id="panelClear" title="Clear"><i data-icon="clear"></i></button>
             <button class="icon-btn" data-cmd="toggle.panel" title="Hide Panel"><i data-icon="close"></i></button>
