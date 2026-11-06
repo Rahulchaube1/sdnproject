@@ -1,0 +1,7 @@
+# Campus Access Control SDN Project Dependencies
+# Standard library is sufficient for standalone simulator & web console (`verify_policy.py` & `server.py`).
+# Install Ryu and Mininet in an Ubuntu/Debian SDN lab environment for kernel-level Open vSwitch execution:
+ryu==4.34
+eventlet==0.30.2
+oslo.config>=8.0.0
+msgpack>=1.0.0
