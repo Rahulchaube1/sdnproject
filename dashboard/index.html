@@ -310,6 +310,7 @@
           <button class="panel-tab" data-ptab="trace">Trace</button>
           <button class="panel-tab" data-ptab="problems">Problems <span class="count" id="probCount">0</span></button>
           <button class="panel-tab" data-ptab="log">Controller Log</button>
+          <button class="panel-tab" data-ptab="terminal">Terminal</button>
           <div class="tools">
             <input type="text" class="filter" id="capFilter" placeholder="Filter (e.g. h1, ssh, drop)" />
             <button class="icon-btn" id="btnExportCsv" title="Export CSV Capture"><i data-icon="copy"></i></button>
@@ -331,6 +332,15 @@
           <div class="panel-view" data-pview="trace"><div class="trace" id="trace"><div class="empty">Select a packet in Capture to see its hop-by-hop pipeline trace.</div></div></div>
           <div class="panel-view" data-pview="problems"><div id="problems"><div class="empty">No policy violations detected.</div></div></div>
           <div class="panel-view" data-pview="log"><div class="log" id="log"></div></div>
+          <div class="panel-view" data-pview="terminal">
+            <div class="terminal-container" id="termContainer">
+              <div class="term-output" id="termOutput"></div>
+              <div class="term-input-row">
+                <span class="term-prompt">mininet-sdn&gt;</span>
+                <input type="text" class="term-input" id="termInput" placeholder="Type 'help' for commands (pingall, ping h1 srv1, dump-flows s1, etc.)" autocomplete="off" spellcheck="false" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

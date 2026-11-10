@@ -6,5 +6,5 @@ __pycache__/
 .env*
 .DS_Store
 Thumbs.db
-
 .vercel
+node_modules/

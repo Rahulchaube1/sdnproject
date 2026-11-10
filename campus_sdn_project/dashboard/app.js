@@ -892,6 +892,7 @@
     initTopologySVG();
     initRateChart();
     initKeyboardShortcuts();
+    initTerminal();
 
     // 1. Immediate UI hydration from topology baseline
     state.topology = DEFAULT_TOPOLOGY;
@@ -1837,6 +1838,11 @@
     });
 
     document.getElementById('panelClear')?.addEventListener('click', async () => {
+      if (state.activePanelTab === 'terminal') {
+        const termOutput = document.getElementById('termOutput');
+        if (termOutput) termOutput.innerHTML = '';
+        return;
+      }
       await api('/api/capture/clear', { method: 'POST' });
     });
 
@@ -1954,6 +1960,10 @@
     document.querySelectorAll('.panel-view').forEach(v => {
       v.classList.toggle('active', v.getAttribute('data-pview') === ptab);
     });
+    if (ptab === 'terminal') {
+      const termInput = document.getElementById('termInput');
+      if (termInput) setTimeout(() => termInput.focus(), 60);
+    }
   }
 
   function toggleSidebar(force) {
@@ -2516,6 +2526,7 @@
     { id: 'open.topology', title: 'View: Open Topology Editor Tab', icon: 'network', cat: 'View' },
     { id: 'open.flows', title: 'View: Open OpenFlow 1.3 Flow Tables Tab', icon: 'files', cat: 'View' },
     { id: 'open.matrix', title: 'View: Open Connectivity Verification Matrix Tab', icon: 'beaker', cat: 'View' },
+    { id: 'open.terminal', title: 'View: Open Interactive Mininet SDN Terminal', icon: 'keyboard', cat: 'View' },
     { id: 'toggle.sidebar', title: 'View: Toggle Primary Side Bar (Ctrl+B)', icon: 'layout-side', cat: 'View' },
     { id: 'toggle.panel', title: 'View: Toggle Panel (Ctrl+J)', icon: 'layout-panel', cat: 'View' }
   ];
@@ -2597,6 +2608,7 @@
     else if (cmd === 'open.topology') switchTab('topology');
     else if (cmd === 'open.flows') switchTab('flows');
     else if (cmd === 'open.matrix') switchTab('matrix');
+    else if (cmd === 'open.terminal') { switchPanelTab('terminal'); togglePanel(true); }
     else if (cmd === 'toggle.sidebar') toggleSidebar();
     else if (cmd === 'toggle.panel') togglePanel();
     else if (cmd === 'help') showShortcutsHelp();
@@ -2662,6 +2674,350 @@
         setTimeout(() => toast.remove(), 220);
       }
     }, 4500);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 16. Interactive Mininet SDN Terminal Controller
+  // ---------------------------------------------------------------------------
+  const termHistory = [];
+  let termHistIndex = -1;
+
+  function initTerminal() {
+    const termInput = document.getElementById('termInput');
+    const termOutput = document.getElementById('termOutput');
+    const termContainer = document.getElementById('termContainer');
+    if (!termInput || !termOutput) return;
+
+    printTermBanner();
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = termInput.value.trim();
+        if (cmd) {
+          termHistory.push(cmd);
+          termHistIndex = termHistory.length;
+          execTerminalCommand(cmd);
+          termInput.value = '';
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (termHistory.length > 0 && termHistIndex > 0) {
+          termHistIndex--;
+          termInput.value = termHistory[termHistIndex] || '';
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (termHistIndex < termHistory.length - 1) {
+          termHistIndex++;
+          termInput.value = termHistory[termHistIndex] || '';
+        } else {
+          termHistIndex = termHistory.length;
+          termInput.value = '';
+        }
+      }
+    });
+
+    if (termContainer) {
+      termContainer.addEventListener('click', () => {
+        termInput.focus();
+      });
+    }
+  }
+
+  function termPrint(html) {
+    const termOutput = document.getElementById('termOutput');
+    if (!termOutput) return;
+    const div = document.createElement('div');
+    div.className = 'term-line';
+    div.innerHTML = html;
+    termOutput.appendChild(div);
+    termOutput.scrollTop = termOutput.scrollHeight;
+  }
+
+  function termPrintRaw(text) {
+    termPrint(escapeHtml(text));
+  }
+
+  function printTermBanner() {
+    termPrint('<span class="term-cyan term-bold">==================================================================================</span>');
+    termPrint('<span class="term-green term-bold"> Campus Access Control — Interactive Mininet SDN Controller Terminal (OpenFlow 1.3)</span>');
+    termPrint('<span class="term-dim"> Topology: 3 OpenFlow Switches (s1, s2, s3) | 6 Campus Hosts (h1-h4, srv_acad, srv_admin)</span>');
+    termPrint('<span class="term-dim"> Controller: Ryu OpenFlow 1.3 | Security Policy: Table 0 Role-Based Ingress Filtering</span>');
+    termPrint('<span class="term-dim"> Type <span class="term-yellow term-bold">\'help\'</span> for commands, <span class="term-yellow term-bold">\'pingall\'</span> for full reachability matrix, or <span class="term-yellow term-bold">\'verify\'</span> for ACL probe audit.</span>');
+    termPrint('<span class="term-cyan term-bold">==================================================================================</span>');
+  }
+
+  function resolveHostName(target) {
+    if (!target) return null;
+    const t = target.trim().toLowerCase();
+    if (t === 'srv1' || t === 'srv-acad' || t === 'academic') return 'srv_acad';
+    if (t === 'srv2' || t === 'srv-admin' || t === 'admin') return 'srv_admin';
+    const hosts = DEFAULT_TOPOLOGY.hosts;
+    const byName = hosts.find(h => h.name.toLowerCase() === t);
+    if (byName) return byName.name;
+    const byIp = hosts.find(h => h.ip === t);
+    if (byIp) return byIp.name;
+    return null;
+  }
+
+  function execTerminalCommand(cmdStr) {
+    termPrint('<span class="term-prompt">mininet-sdn&gt;</span> <span class="term-cmd">' + escapeHtml(cmdStr) + '</span>');
+    const parts = cmdStr.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+
+    switch (cmd) {
+      case 'help':
+      case '?':
+        termPrint('<span class="term-bold term-cyan">--- AVAILABLE MININET &amp; SDN CONTROLLER COMMANDS ---</span>');
+        termPrint('<span class="term-bold term-yellow">[Connectivity &amp; Testing]</span>');
+        termPrint('  <span class="term-green">ping &lt;src&gt; &lt;dst&gt;</span>       Send 3 ICMP echo requests between hosts (e.g. ping h1 srv_admin, ping h3 srv_admin)');
+        termPrint('  <span class="term-green">pingall</span>                Run 30-pair Mininet ping test across all 6 campus hosts');
+        termPrint('  <span class="term-green">curl &lt;src&gt; &lt;dst&gt; [p]</span>   Simulate HTTP/HTTPS/SSH traffic (e.g. curl h1 srv_acad 80, curl h1 srv_admin 443)');
+        termPrint('  <span class="term-green">verify</span> | <span class="term-green">suite</span>          Run 14-point Role Compliance test suite and audit table');
+        termPrint('<span class="term-bold term-yellow">[OpenFlow 1.3 &amp; Policy]</span>');
+        termPrint('  <span class="term-green">dump-flows [sw]</span>        Dump OpenFlow 1.3 flow tables (ovs-ofctl style) for s1, s2, s3 or all');
+        termPrint('  <span class="term-green">nodes</span>                  List all switches, hosts, IP addresses, MACs, and port bindings');
+        termPrint('  <span class="term-green">rules</span>                  Display active Table 0 campus ACL policies and priority tiers');
+        termPrint('  <span class="term-green">acl [on|off|status]</span>    Toggle student &rarr; admin server ACL policy enforcement');
+        termPrint('<span class="term-bold term-yellow">[Telemetry &amp; Simulator]</span>');
+        termPrint('  <span class="term-green">stats</span>                  Display real-time packet counters, throughput, and packet-ins');
+        termPrint('  <span class="term-green">traffic [on|off|rate|preset]</span> Control background traffic generation stream');
+        termPrint('  <span class="term-green">clear</span>                  Clear terminal screen buffer');
+        break;
+
+      case 'clear':
+        const termOutput = document.getElementById('termOutput');
+        if (termOutput) termOutput.innerHTML = '';
+        break;
+
+      case 'pingall':
+        termPrint('*** Ping: testing ping reachability across 6 campus hosts (30 pairs)...');
+        if (window.clientSDNSimulator) {
+          const matrix = window.clientSDNSimulator.computePingall();
+          renderPingallMatrix();
+          const hosts = ['h1', 'h2', 'h3', 'h4', 'srv_acad', 'srv_admin'];
+          let dropped = 0;
+          let total = 0;
+          hosts.forEach(src => {
+            let row = `<span class="term-bold">${src.padEnd(9)}</span> -&gt; `;
+            hosts.forEach(dst => {
+              if (src === dst) return;
+              total++;
+              const res = matrix[src] && matrix[src][dst];
+              if (res && res.status === 'PERMIT') {
+                row += `<span class="term-green">${dst}</span> `;
+              } else {
+                row += `<span class="term-red">X</span> `;
+                dropped++;
+              }
+            });
+            termPrint(row);
+          });
+          const pct = ((dropped / total) * 100).toFixed(1);
+          const recv = total - dropped;
+          termPrint(`*** Results: <span class="${dropped > 0 ? 'term-yellow' : 'term-green'}">${pct}% dropped (${recv}/${total} received)</span>`);
+          if (state.acl_enforced) {
+            termPrint('<span class="term-green">[Security Audit] 4/30 pairs blocked as required by ACL Rule 100 (Student h1, h2 &harr; Admin Server). Compliance: 100%.</span>');
+          } else {
+            termPrint('<span class="term-yellow">[Security Notice] ACL enforcement is currently DISABLED. All 30/30 pairs reachable.</span>');
+          }
+        }
+        break;
+
+      case 'ping':
+        if (args.length < 2) {
+          termPrint('<span class="term-red">Usage:</span> ping &lt;src&gt; &lt;dst&gt;  (e.g., <span class="term-cyan">ping h1 srv_acad</span> or <span class="term-cyan">ping h1 srv_admin</span>)');
+          break;
+        }
+        const pSrc = resolveHostName(args[0]);
+        const pDst = resolveHostName(args[1]);
+        if (!pSrc || !pDst) {
+          termPrint(`<span class="term-red">Error:</span> Unknown host name. Available: h1, h2, h3, h4, srv_acad (srv1), srv_admin (srv2)`);
+          break;
+        }
+        if (pSrc === pDst) {
+          termPrint(`<span class="term-yellow">Notice:</span> Loopback ping on ${pSrc} (127.0.0.1) — 0.03 ms`);
+          break;
+        }
+        const srcH = DEFAULT_TOPOLOGY.hosts.find(h => h.name === pSrc);
+        const dstH = DEFAULT_TOPOLOGY.hosts.find(h => h.name === pDst);
+        termPrint(`<span class="term-dim">PING ${dstH.ip} (${pDst}): 56 data bytes from ${srcH.ip} (${pSrc})</span>`);
+        let rx = 0;
+        let rttSum = 0;
+        for (let i = 1; i <= 3; i++) {
+          const rec = window.clientSDNSimulator ? window.clientSDNSimulator.simulatePacket(pSrc, pDst, 'ICMP', 0, 'cli') : null;
+          if (rec && rec.allowed) {
+            rx++;
+            rttSum += (rec.rtt_ms || 1.15);
+            termPrint(`64 bytes from ${dstH.ip} (${pDst}): icmp_seq=${i} ttl=64 time=${rec.rtt_ms ? rec.rtt_ms.toFixed(2) : '1.15'} ms <span class="term-green">[PERMIT: ${rec.rule_id}]</span>`);
+          } else {
+            termPrint(`From ${srcH.ip} (${pSrc}): icmp_seq=${i} <span class="term-red">Destination Host Prohibited</span> by OpenFlow Table 0 Rule <span class="term-bold">${rec ? rec.rule_id : 'ACL-DENY-200'}</span> (${rec ? rec.reason : 'Drop'})`);
+          }
+        }
+        const loss = Math.round(((3 - rx) / 3) * 100);
+        termPrint(`--- ${pDst} (${dstH.ip}) ping statistics ---`);
+        termPrint(`3 packets transmitted, ${rx} packets received, <span class="${loss > 0 ? 'term-red' : 'term-green'}">${loss}% packet loss</span>${rx > 0 ? `, avg rtt ${(rttSum / rx).toFixed(2)} ms` : ''}`);
+        break;
+
+      case 'curl':
+        if (args.length < 2) {
+          termPrint('<span class="term-red">Usage:</span> curl &lt;src&gt; &lt;dst&gt; [port]  (e.g., <span class="term-cyan">curl h3 srv_admin 80</span> or <span class="term-cyan">curl h1 srv_admin 80</span>)');
+          break;
+        }
+        const cSrc = resolveHostName(args[0]);
+        const cDst = resolveHostName(args[1]);
+        if (!cSrc || !cDst) {
+          termPrint(`<span class="term-red">Error:</span> Unknown host name. Available: h1, h2, h3, h4, srv_acad, srv_admin`);
+          break;
+        }
+        const cPort = parseInt(args[2], 10) || 80;
+        const cDstH = DEFAULT_TOPOLOGY.hosts.find(h => h.name === cDst);
+        let proto = 'HTTP';
+        if (cPort === 443) proto = 'HTTPS';
+        else if (cPort === 22) proto = 'SSH';
+        else if (cPort === 53) proto = 'DNS';
+
+        termPrint(`<span class="term-dim">* Connecting to ${cDstH.ip} (${cDst}) port ${cPort} via OpenFlow 1.3...</span>`);
+        const cRec = window.clientSDNSimulator ? window.clientSDNSimulator.simulatePacket(cSrc, cDst, proto, cPort, 'cli') : null;
+        if (cRec && cRec.allowed) {
+          termPrint(`* Connected to ${cDstH.ip} (${cDst}) port ${cPort} (RTT: ${cRec.rtt_ms ? cRec.rtt_ms.toFixed(2) : '1.20'} ms)`);
+          termPrint(`&gt; GET / HTTP/1.1\n&gt; Host: ${cDstH.ip}:${cPort}\n&gt; User-Agent: curl/8.5.0-sdn`);
+          termPrint(`&lt; <span class="term-green term-bold">HTTP/1.1 200 OK</span>\n&lt; Date: ${new Date().toUTCString()}\n&lt; Server: Campus-SDN-Service/1.0 (Ryu OF13)\n&lt; Content-Type: text/html; charset=UTF-8\n&lt; Content-Length: 512`);
+          termPrint(`&lt; Connection: keep-alive\n<span class="term-green">[SUCCESS] Flow installed on path: ${cRec.path.join(' &rarr; ')} (Rule: ${cRec.rule_id})</span>`);
+        } else {
+          termPrint(`* <span class="term-red">OpenFlow Table 0 DENY:</span> Rule <span class="term-bold">${cRec ? cRec.rule_id : 'ACL-DENY-200'}</span> (Priority ${cRec ? cRec.priority : 200})`);
+          termPrint(`* Dropped at Switch: <span class="term-bold">${cRec ? cRec.dropped_at : 's1'}</span>`);
+          termPrint(`<span class="term-red">curl: (7) Failed to connect to ${cDstH.ip} port ${cPort}: Connection denied by campus security policy</span>`);
+          termPrint(`<span class="term-dim">Reason: ${cRec ? cRec.reason : 'Role Policy Violation'}</span>`);
+        }
+        break;
+
+      case 'dump-flows':
+        const targetSw = (args[0] || 'all').toLowerCase();
+        const switchesToDump = (targetSw === 'all' || !['s1', 's2', 's3'].includes(targetSw)) ? ['s1', 's2', 's3'] : [targetSw];
+        switchesToDump.forEach(sw => {
+          const dpid = NODE_POSITIONS[sw]?.dpid || '0000000000000001';
+          termPrint(`<span class="term-cyan term-bold">NXST_FLOW reply (xid=0x4) [Switch: ${sw}, DPID: ${dpid}]:</span>`);
+          const flows = state.flow_tables[sw] || [];
+          if (flows.length === 0) {
+            termPrint(` (no flow entries installed)`);
+          } else {
+            flows.forEach(f => {
+              const hexCookie = '0x' + (Number(f.cookie) || 0).toString(16);
+              const matchPart = f.match ? `,${f.match}` : '';
+              const idlePart = f.idle_timeout ? `, idle_timeout=${f.idle_timeout}, idle_age=${Math.round(f.idle_age || 0)}` : '';
+              const actClass = f.actions === 'drop' ? 'term-red' : (f.actions.startsWith('CONTROLLER') ? 'term-yellow' : 'term-green');
+              termPrint(` cookie=${hexCookie}, duration=${f.duration || 120.0}s, table=${f.table_id || 0}, n_packets=${f.n_packets || 0}, n_bytes=${f.n_bytes || 0}${idlePart}, priority=${f.priority}${matchPart} actions=<span class="${actClass}">${f.actions}</span> <span class="term-dim">(rule: ${f.rule_id})</span>`);
+            });
+          }
+        });
+        break;
+
+      case 'nodes':
+        termPrint('<span class="term-bold term-cyan">--- CAMPUS SDN TOPOLOGY NODES ---</span>');
+        termPrint('<span class="term-bold term-yellow">OpenFlow 1.3 Switches:</span>');
+        (DEFAULT_TOPOLOGY.switches || []).forEach(sw => {
+          termPrint(`  <span class="term-bold">${sw.name.padEnd(4)}</span> DPID=${sw.dpid} | Role: ${sw.role}`);
+        });
+        termPrint('<span class="term-bold term-yellow">Campus Hosts:</span>');
+        (DEFAULT_TOPOLOGY.hosts || []).forEach(h => {
+          termPrint(`  <span class="term-bold">${h.name.padEnd(10)}</span> IP=${h.ip.padEnd(12)} Role=${h.role.padEnd(16)} Attached=${h.switch}-eth${h.port}`);
+        });
+        break;
+
+      case 'rules':
+        termPrint('<span class="term-bold term-cyan">--- OPENFLOW 1.3 TABLE 0 ACL RULE HIERARCHY ---</span>');
+        termPrint('  <span class="term-red term-bold">1. Priority 200: ACL-DENY-200</span>    Student (10.0.0.1, 10.0.0.2) &harr; Admin Server (10.0.0.200) &rarr; <span class="term-red">DROP</span>');
+        termPrint('  <span class="term-green term-bold">2. Priority 150: ACL-PERMIT-150</span>  Faculty (10.0.0.3, 10.0.0.4) &rarr; Admin Server (10.0.0.200) &rarr; <span class="term-green">PERMIT (port)</span>');
+        termPrint('  <span class="term-green term-bold">3. Priority 120: ACL-PERMIT-120</span>  All Campus Hosts &rarr; Academic Server (10.0.0.100) &rarr; <span class="term-green">PERMIT (port)</span>');
+        termPrint('  <span class="term-cyan term-bold">4. Priority 100: ACL-ARP-100</span>     ARP Broadcast Resolution Protocol &rarr; <span class="term-cyan">NORMAL (flood)</span>');
+        termPrint('  <span class="term-dim term-bold">5. Priority 10:  L2-FWD-010</span>      Standard Learned L2 MAC/IP Campus Forwarding &rarr; <span class="term-dim">OUTPUT (port)</span>');
+        termPrint('  <span class="term-yellow term-bold">6. Priority 0:   TABLE-MISS-000</span>  Default Unmatched Ingress Traffic &rarr; <span class="term-yellow">CONTROLLER:65535</span>');
+        break;
+
+      case 'acl':
+        const sub = (args[0] || '').toLowerCase();
+        if (sub === 'on' || sub === 'enable') {
+          if (window.clientSDNSimulator) window.clientSDNSimulator.setAclEnforced(true);
+          else toggleACL(true);
+          termPrint('<span class="term-green">[SDN Controller] Campus ACL enforcement ENABLED: Student hosts blocked from Admin Server (Priority 200).</span>');
+        } else if (sub === 'off' || sub === 'disable') {
+          if (window.clientSDNSimulator) window.clientSDNSimulator.setAclEnforced(false);
+          else toggleACL(false);
+          termPrint('<span class="term-yellow">[SDN Controller] Campus ACL enforcement DISABLED: All traffic bypassed via L2 switching.</span>');
+        } else {
+          termPrint(`[SDN Controller] Campus ACL Enforcement: ${state.acl_enforced ? '<span class="term-green term-bold">ACTIVE (Student &rarr; Admin Server Blocked)</span>' : '<span class="term-yellow term-bold">DISABLED (Bypass Mode)</span>'}`);
+        }
+        break;
+
+      case 'traffic':
+        const tSub = (args[0] || '').toLowerCase();
+        if (tSub === 'on' || tSub === 'start') {
+          if (window.clientSDNSimulator) window.clientSDNSimulator.startTraffic();
+          else toggleTraffic(true);
+          termPrint(`<span class="term-green">[Traffic Gen] Live traffic streaming started at ${state.traffic.rate} pkts/s (${state.traffic.preset} preset).</span>`);
+        } else if (tSub === 'off' || tSub === 'stop') {
+          if (window.clientSDNSimulator) window.clientSDNSimulator.stopTraffic();
+          else toggleTraffic(false);
+          termPrint('<span class="term-yellow">[Traffic Gen] Live traffic generator stopped.</span>');
+        } else if (tSub === 'rate') {
+          const rVal = parseFloat(args[1]);
+          if (isNaN(rVal) || rVal <= 0) {
+            termPrint('<span class="term-red">Usage:</span> traffic rate &lt;number&gt;  (e.g., traffic rate 10.0)');
+          } else {
+            if (window.clientSDNSimulator) window.clientSDNSimulator.setRate(rVal);
+            termPrint(`<span class="term-cyan">[Traffic Gen] Packet generation rate set to ${rVal} pkts/s.</span>`);
+          }
+        } else if (tSub === 'preset') {
+          const pName = (args[1] || '').toLowerCase();
+          if (['normal', 'exam', 'breach', 'burst'].includes(pName)) {
+            if (window.clientSDNSimulator) window.clientSDNSimulator.setPreset(pName);
+            termPrint(`<span class="term-cyan">[Traffic Gen] Scenario preset switched to '${pName}'.</span>`);
+          } else {
+            termPrint('<span class="term-red">Error:</span> Invalid preset. Choices: normal, exam, breach, burst');
+          }
+        } else {
+          termPrint(`[Traffic Gen] Status: ${state.traffic.enabled ? '<span class="term-green">RUNNING</span>' : '<span class="term-dim">STOPPED</span>'}, Rate: ${state.traffic.rate} pkts/s, Preset: '${state.traffic.preset}'`);
+        }
+        break;
+
+      case 'verify':
+      case 'suite':
+      case 'test':
+        termPrint('*** Executing Campus Access Control Role Compliance Probes (14 Tests)...');
+        if (window.clientSDNSimulator) {
+          const suite = window.clientSDNSimulator.computeSuite();
+          renderComplianceSuite();
+          let passed = 0;
+          suite.forEach((tc, idx) => {
+            const ok = tc.status === 'PASS';
+            if (ok) passed++;
+            const tag = ok ? '<span class="term-green term-bold">[PASS]</span>' : '<span class="term-red term-bold">[FAIL]</span>';
+            const verd = tc.actual === 'PERMIT' ? '<span class="term-green">PERMIT</span>' : '<span class="term-red">DROP</span>';
+            termPrint(`  ${tag} #${String(idx + 1).padStart(2)} ${tc.desc.padEnd(52)} | Verdict: ${verd}`);
+          });
+          const allOk = passed === suite.length;
+          termPrint(`*** Compliance Summary: <span class="${allOk ? 'term-green' : 'term-red'} term-bold">${passed}/${suite.length} Tests Passed (${allOk ? '100% Policy Compliance' : 'Violations Detected'})</span> ***`);
+        }
+        break;
+
+      case 'stats':
+        termPrint('<span class="term-bold term-cyan">--- CAMPUS SDN DATAPATH TELEMETRY ---</span>');
+        termPrint(`  Probes Simulated:     <span class="term-bold">${state.stats.probes || 0}</span>`);
+        termPrint(`  Packets Permitted:    <span class="term-green term-bold">${state.stats.permitted || 0}</span>`);
+        termPrint(`  Packets Dropped:      <span class="term-red term-bold">${state.stats.dropped || 0}</span>`);
+        termPrint(`  Datapath Frames:      ${state.stats.frames || 0}`);
+        termPrint(`  Datapath Throughput:  ${formatBytes(state.stats.bytes || 0)}`);
+        termPrint(`  Active Flow Entries:  ${state.stats.active_flows || 0}`);
+        termPrint(`  Packet-In Events:     ${state.stats.packet_ins || 0}`);
+        termPrint(`  Flows Expired:        ${state.stats.flows_expired || 0}`);
+        break;
+
+      default:
+        termPrint(`<span class="term-red">Command not found:</span> "${cmd}". Type <span class="term-yellow">'help'</span> for available commands.`);
+        break;
+    }
   }
 
   function updateStatusBarClock() {

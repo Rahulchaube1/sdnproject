@@ -53,7 +53,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
  cookie=0x2, duration=0.004s, table=0, n_packets=18, n_bytes=756, idle_age=0, priority=100,arp actions=NORMAL
  cookie=0x2b, duration=0.002s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=1,dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:02,nw_src=10.0.0.1,nw_dst=10.0.0.2 actions=output:2
  cookie=0x2c, duration=0.002s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=2,dl_src=00:00:00:00:00:02,dl_dst=00:00:00:00:00:01,nw_src=10.0.0.2,nw_dst=10.0.0.1 actions=output:1
- cookie=0x2d, duration=0.002s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=1,dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:03,nw_src=10.0.0.1,nw_dst=10.0.0.3 actions=output:3
+ cookie=0x2d, duration=0.001s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=1,dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:03,nw_src=10.0.0.1,nw_dst=10.0.0.3 actions=output:3
  cookie=0x32, duration=0.001s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=3,dl_src=00:00:00:00:00:03,dl_dst=00:00:00:00:00:01,nw_src=10.0.0.3,nw_dst=10.0.0.1 actions=output:1
  cookie=0x33, duration=0.001s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=1,dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:04,nw_src=10.0.0.1,nw_dst=10.0.0.4 actions=output:3
  cookie=0x38, duration=0.001s, table=0, n_packets=1, n_bytes=98, idle_timeout=60, idle_age=0, priority=10,ip,in_port=3,dl_src=00:00:00:00:00:04,dl_dst=00:00:00:00:00:01,nw_src=10.0.0.4,nw_dst=10.0.0.1 actions=output:1
