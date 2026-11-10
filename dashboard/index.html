@@ -213,12 +213,29 @@
                     <span><span class="dot" style="background:var(--srv-admin)"></span>Admin server</span>
                     <span><span class="dot" style="background:var(--switch)"></span>OpenFlow switch</span>
                   </div>
+                  <div class="scenario-bar" id="topoScenarioBar">
+                    <span class="scen-label">Scenario:</span>
+                    <button class="scen-chip active" data-preset="normal">Normal</button>
+                    <button class="scen-chip" data-preset="exam">Exam Day</button>
+                    <button class="scen-chip" data-preset="breach">Admin Breach</button>
+                    <button class="scen-chip" data-preset="burst">DDoS Burst</button>
+                  </div>
                   <div class="right">
                     <span class="mono dim">10.0.0.0/24</span>
-                    <button class="icon-btn" id="animToggle" title="Toggle packet animation"><i data-icon="pulse"></i></button>
+                    <button class="icon-btn on" id="animToggle" title="Toggle packet animation"><i data-icon="pulse"></i></button>
                   </div>
                 </div>
-                <svg id="topo" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="topo-container-rel">
+                  <svg id="topo" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+                  <div class="node-popover hidden" id="nodePopover">
+                    <div class="popover-head">
+                      <span class="popover-title" id="popNodeTitle">Node Details</span>
+                      <button class="icon-btn close" id="popNodeClose"><i data-icon="close"></i></button>
+                    </div>
+                    <div class="popover-body" id="popNodeBody"></div>
+                    <div class="popover-actions" id="popNodeActions"></div>
+                  </div>
+                </div>
               </div>
               <div class="overview">
                 <div>

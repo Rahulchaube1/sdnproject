@@ -893,6 +893,7 @@
     initRateChart();
     initKeyboardShortcuts();
     initTerminal();
+    initScenarioChips();
 
     // 1. Immediate UI hydration from topology baseline
     state.topology = DEFAULT_TOPOLOGY;
@@ -1189,22 +1190,111 @@
         <text x="0" y="${-h/2 + 32}" text-anchor="middle" font-size="10" fill="#9d9d9d" class="mono-t">${sub}</text>
       `;
 
-      // Click: set source; Alt+Click / Right-Click: set dest
+      // Click: Switch/Controller/Host interactive inspection
       nodeGroup.addEventListener('click', (e) => {
-        if (meta.type === 'controller' || meta.type === 'switch') return;
+        if (meta.type === 'controller') {
+          switchPanelTab('log');
+          togglePanel(true);
+          showToast('Inspecting Ryu Controller c0 (127.0.0.1:6653) logs.');
+          return;
+        }
+        if (meta.type === 'switch') {
+          switchTab('flows');
+          document.querySelectorAll('#flowSwitchSeg button').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-sw') === id);
+          });
+          state.flowFilterSwitch = id;
+          renderFlowTables();
+          showToast(`Filtered Flow Tables to Switch ${id} (DPID: ${meta.dpid}).`);
+          return;
+        }
         if (e.altKey) {
           selectDestinationHost(id);
         } else {
           selectSourceHost(id);
         }
+        showNodePopover(id, meta);
       });
+
       nodeGroup.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         if (meta.type === 'controller' || meta.type === 'switch') return;
         selectDestinationHost(id);
+        showNodePopover(id, meta);
       });
 
       g.appendChild(nodeGroup);
+    });
+
+    document.getElementById('popNodeClose')?.addEventListener('click', () => {
+      document.getElementById('nodePopover')?.classList.add('hidden');
+    });
+  }
+
+  function showNodePopover(id, meta) {
+    const pop = document.getElementById('nodePopover');
+    if (!pop) return;
+    const titleEl = document.getElementById('popNodeTitle');
+    const bodyEl = document.getElementById('popNodeBody');
+    const actEl = document.getElementById('popNodeActions');
+
+    titleEl.textContent = `${meta.label || id} [${(meta.type || '').toUpperCase()}]`;
+    const hostObj = (DEFAULT_TOPOLOGY.hosts || []).find(h => h.name === id);
+    const swObj = (DEFAULT_TOPOLOGY.switches || []).find(s => s.name === id);
+
+    let html = '';
+    if (hostObj) {
+      html += `<span class="lbl">Role:</span><span>${hostObj.role}</span>`;
+      html += `<span class="lbl">IP / Subnet:</span><span>${hostObj.ip} (10.0.0.0/24)</span>`;
+      html += `<span class="lbl">MAC Addr:</span><span>${hostObj.mac || '00:00:00:00:00:01'}</span>`;
+      html += `<span class="lbl">Switch Uplink:</span><span>${hostObj.switch}-eth${hostObj.port}</span>`;
+      html += `<span class="lbl">Default GW:</span><span>${hostObj.switch} (10.0.0.254)</span>`;
+      html += `<span class="lbl">Link Status:</span><span class="ok">UP (100 Mbps FD)</span>`;
+
+      actEl.innerHTML = `
+        <button class="btn secondary" id="popBtnSrc"><i data-icon="go"></i>Set Source</button>
+        <button class="btn secondary" id="popBtnDst"><i data-icon="go"></i>Set Destination</button>
+        <button class="btn secondary" id="popBtnPing"><i data-icon="pulse"></i>Ping</button>
+        <button class="btn secondary" id="popBtnCurl"><i data-icon="play"></i>Curl :80</button>
+      `;
+      pop.classList.remove('hidden');
+      applyIcons(actEl);
+
+      document.getElementById('popBtnSrc')?.addEventListener('click', () => { selectSourceHost(id); });
+      document.getElementById('popBtnDst')?.addEventListener('click', () => { selectDestinationHost(id); });
+      document.getElementById('popBtnPing')?.addEventListener('click', () => {
+        const other = (id === 'srv_admin') ? 'h1' : ((id === 'h1') ? 'srv_admin' : 'srv_acad');
+        selectSourceHost(id);
+        selectDestinationHost(other);
+        if (window.clientSDNSimulator) window.clientSDNSimulator.simulatePacket(id, other, 'ICMP');
+      });
+      document.getElementById('popBtnCurl')?.addEventListener('click', () => {
+        const srv = (id === 'srv_acad' || id === 'srv_admin') ? id : 'srv_acad';
+        const client = (id === 'srv_acad' || id === 'srv_admin') ? 'h1' : id;
+        selectSourceHost(client);
+        selectDestinationHost(srv);
+        if (window.clientSDNSimulator) window.clientSDNSimulator.simulatePacket(client, srv, 'HTTP', 80);
+      });
+    }
+    bodyEl.innerHTML = html;
+  }
+
+  function initScenarioChips() {
+    document.querySelectorAll('#topoScenarioBar .scen-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const preset = chip.getAttribute('data-preset');
+        document.querySelectorAll('#topoScenarioBar .scen-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        if (window.clientSDNSimulator) {
+          window.clientSDNSimulator.setPreset(preset);
+          if (!state.traffic.enabled) {
+            window.clientSDNSimulator.startTraffic(6.0, preset);
+          }
+        }
+        const sidePreset = document.getElementById('trPreset');
+        if (sidePreset) sidePreset.value = preset;
+        showToast(`Traffic scenario switched to '${preset.toUpperCase()}'.`);
+      });
     });
   }
 
@@ -1452,7 +1542,81 @@
           </tbody>
         </table>
       ` : ''}
+
+      <div class="sub" style="margin-top:14px;">OpenFlow Dissected Packet Telemetry</div>
+      <div class="proto-tree">
+        <div class="proto-layer"><span class="layer-title">Frame #${rec.id}:</span> ${rec.bytes || 98} bytes on wire (${(rec.bytes || 98) * 8} bits) captured on interface ${(rec.path && rec.path[0]) || 's1'}-eth1</div>
+        <div class="proto-layer"><span class="layer-title">Ethernet II:</span> Src: ${srcHost?.mac || '00:00:00:00:00:01'} (${rec.src_host}), Dst: ${dstHost?.mac || '00:00:00:00:00:20'} (${rec.dst_host}) [Type: ${rec.protocol === 'ARP' ? 'ARP (0x0806)' : 'IPv4 (0x0800)'}]</div>
+        <div class="proto-layer"><span class="layer-title">Internet Protocol Version 4:</span> Src: ${rec.src_ip}, Dst: ${rec.dst_ip}, TTL: 64, DSCP: CS0 (0x00), Protocol: ${rec.protocol} (${rec.ip_proto || 1})</div>
+        <div class="proto-layer"><span class="layer-title">${rec.protocol} Protocol:</span> ${rec.protocol === 'ICMP' ? 'Type: 8 (Echo ping request), Code: 0, Seq: ' + (rec.id % 256) : (rec.protocol === 'HTTP' || rec.protocol === 'HTTPS' ? 'Destination Port: ' + (rec.dst_port || 80) + ' (TCP Handshake Established)' : 'Destination Port: ' + (rec.dst_port || 22))}</div>
+      </div>
+
+      <div class="wireshark-wrap">
+        <div class="wireshark-head">
+          <span>Packet Byte View (Hex &amp; ASCII Stream)</span>
+          <span>${rec.bytes || 98} bytes</span>
+        </div>
+        <pre class="hex-dump">${generateAuthenticHexDump(rec, srcHost, dstHost)}</pre>
+      </div>
     `;
+    applyIcons(traceEl);
+  }
+
+  function generateAuthenticHexDump(rec, srcHost, dstHost) {
+    const bytes = [];
+    const dstMacParts = (dstHost?.mac || '00:00:00:00:00:20').split(':').map(h => parseInt(h, 16));
+    bytes.push(...dstMacParts);
+    const srcMacParts = (srcHost?.mac || '00:00:00:00:00:01').split(':').map(h => parseInt(h, 16));
+    bytes.push(...srcMacParts);
+    const isArp = rec.protocol === 'ARP';
+    bytes.push(0x08, isArp ? 0x06 : 0x00);
+
+    if (isArp) {
+      bytes.push(0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x01);
+      bytes.push(...srcMacParts);
+      (rec.src_ip || '10.0.0.1').split('.').forEach(o => bytes.push(parseInt(o, 10)));
+      bytes.push(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+      (rec.dst_ip || '10.0.0.100').split('.').forEach(o => bytes.push(parseInt(o, 10)));
+    } else {
+      bytes.push(0x45, 0x00);
+      const totalLen = (rec.bytes || 98) - 14;
+      bytes.push((totalLen >> 8) & 0xff, totalLen & 0xff);
+      const ident = (rec.id * 31) & 0xffff;
+      bytes.push((ident >> 8) & 0xff, ident & 0xff);
+      bytes.push(0x40, 0x00, 0x40);
+      const ipProto = rec.protocol === 'ICMP' ? 0x01 : (rec.protocol === 'UDP' || rec.protocol === 'DNS' ? 0x11 : 0x06);
+      bytes.push(ipProto, 0xb6, 0xc2);
+      (rec.src_ip || '10.0.0.1').split('.').forEach(o => bytes.push(parseInt(o, 10)));
+      (rec.dst_ip || '10.0.0.200').split('.').forEach(o => bytes.push(parseInt(o, 10)));
+
+      if (rec.protocol === 'ICMP') {
+        bytes.push(0x08, 0x00, 0x4c, 0xd2, 0x00, 0x01, (rec.id >> 8) & 0xff, rec.id & 0xff);
+        const payloadStr = "Campus-SDN-OpenFlow1.3-RyuController";
+        for (let i = 0; i < payloadStr.length && bytes.length < (rec.bytes || 98); i++) {
+          bytes.push(payloadStr.charCodeAt(i));
+        }
+      } else {
+        const srcP = 49152 + (rec.id % 1000);
+        const dstP = rec.dst_port || 80;
+        bytes.push((srcP >> 8) & 0xff, srcP & 0xff, (dstP >> 8) & 0xff, dstP & 0xff);
+        bytes.push(0x1a, 0x2b, 0x3c, 0x4d, 0x00, 0x00, 0x00, 0x00, 0x50, 0x02, 0x72, 0x10, 0x9a, 0x1b, 0x00, 0x00);
+        const payloadStr = "GET / HTTP/1.1\r\nHost: " + rec.dst_ip + "\r\nUser-Agent: SDN-NOC-Probe\r\n\r\n";
+        for (let i = 0; i < payloadStr.length && bytes.length < (rec.bytes || 128); i++) {
+          bytes.push(payloadStr.charCodeAt(i));
+        }
+      }
+    }
+
+    const lines = [];
+    for (let i = 0; i < bytes.length; i += 16) {
+      const chunk = bytes.slice(i, i + 16);
+      const offset = ('0000' + i.toString(16)).slice(-4);
+      const hexParts = chunk.map(b => ('00' + b.toString(16)).slice(-2)).join(' ');
+      const paddedHex = hexParts.padEnd(48, ' ');
+      const ascii = chunk.map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
+      lines.push(`<span class="off">${offset}</span>  <span class="bytes">${paddedHex}</span>  <span class="ascii">${escapeHtml(ascii)}</span>`);
+    }
+    return lines.join('\n');
   }
 
   // ---------------------------------------------------------------------------
