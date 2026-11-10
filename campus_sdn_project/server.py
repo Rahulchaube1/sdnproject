@@ -217,6 +217,9 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Requested-With")
         for key, value in (extra_headers or {}).items():
             self.send_header(key, value)
         self.end_headers()
@@ -238,15 +241,36 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             raise ValueError("request body must be valid JSON")
 
+    def _get_path_and_query(self):
+        url = urlparse(self.path)
+        query = parse_qs(url.query)
+        path = url.path
+        if query.get("__path"):
+            req_path = query["__path"][0]
+            path = req_path if req_path.startswith("/api/") else f"/api/{req_path.lstrip('/')}"
+        elif self.headers.get("x-forwarded-uri"):
+            path = urlparse(self.headers["x-forwarded-uri"]).path
+        elif self.headers.get("x-original-uri"):
+            path = urlparse(self.headers["x-original-uri"]).path
+
+        if path in ("/api", "/api/", "/api/index.py"):
+            path = "/api/state"
+        return path, query
+
+    # ---- OPTIONS
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Requested-With")
+        self.end_headers()
+
     # ---- GET
     def do_HEAD(self):
         self.do_GET()
 
     def do_GET(self):
-        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
-        url = urlparse(raw_path)
-        path = url.path
-        query = parse_qs(url.query)
+        path, query = self._get_path_and_query()
 
         if path == "/api/state":
             return self._json(full_state())
@@ -314,8 +338,7 @@ class SDNRequestHandler(BaseHTTPRequestHandler):
 
     # ---- POST
     def do_POST(self):
-        raw_path = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path") or self.path
-        path = urlparse(raw_path).path
+        path, query = self._get_path_and_query()
         try:
             body = self._body()
             if path in ("/api/packet", "/api/simulate"):

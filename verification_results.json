@@ -541,7 +541,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -557,7 +557,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -573,7 +573,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 1002
       },
@@ -589,7 +589,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -605,7 +605,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -621,7 +621,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -637,7 +637,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2822
       },
@@ -653,7 +653,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2822
       },
@@ -669,7 +669,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 18,
         "n_bytes": 756
       },
@@ -685,7 +685,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -701,7 +701,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -717,7 +717,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -733,7 +733,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -749,7 +749,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -765,7 +765,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -781,7 +781,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -797,7 +797,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -813,7 +813,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -829,7 +829,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -845,7 +845,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 14,
         "n_bytes": 1372
       }
@@ -863,7 +863,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -879,7 +879,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -895,7 +895,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -911,7 +911,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -927,7 +927,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -943,7 +943,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -959,7 +959,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 1002
       },
@@ -975,7 +975,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 1002
       },
@@ -991,7 +991,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1007,7 +1007,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1023,7 +1023,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1039,7 +1039,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1055,7 +1055,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 18,
         "n_bytes": 756
       },
@@ -1071,7 +1071,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1087,7 +1087,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1103,7 +1103,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1119,7 +1119,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1135,7 +1135,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1151,7 +1151,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1167,7 +1167,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1183,7 +1183,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1199,7 +1199,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.001,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1215,7 +1215,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.001,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1231,7 +1231,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 18,
         "n_bytes": 1764
       }
@@ -1249,7 +1249,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -1265,7 +1265,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1281,7 +1281,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 0,
         "n_bytes": 0
       },
@@ -1297,7 +1297,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1313,7 +1313,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -1329,7 +1329,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -1345,7 +1345,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 1002
       },
@@ -1361,7 +1361,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.003,
         "n_packets": 9,
         "n_bytes": 1002
       },
@@ -1377,7 +1377,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -1393,7 +1393,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2538
       },
@@ -1409,7 +1409,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2822
       },
@@ -1425,7 +1425,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 9,
         "n_bytes": 2822
       },
@@ -1441,7 +1441,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1457,7 +1457,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1473,7 +1473,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1489,7 +1489,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.004,
         "n_packets": 5,
         "n_bytes": 490
       },
@@ -1505,7 +1505,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.001,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1521,7 +1521,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.001,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1537,7 +1537,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 26,
         "n_bytes": 1092
       },
@@ -1553,7 +1553,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1569,7 +1569,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1585,7 +1585,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1601,7 +1601,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1617,7 +1617,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1633,7 +1633,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1649,7 +1649,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1665,7 +1665,7 @@
         "reactive": true,
         "idle_timeout": 60,
         "idle_age": 0.0,
-        "duration": 0.009,
+        "duration": 0.002,
         "n_packets": 1,
         "n_bytes": 98
       },
@@ -1681,7 +1681,7 @@
         "reactive": false,
         "idle_timeout": 0,
         "idle_age": 0.0,
-        "duration": 0.017,
+        "duration": 0.004,
         "n_packets": 22,
         "n_bytes": 2156
       }
